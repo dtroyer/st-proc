@@ -6,16 +6,24 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 )
 
-var (
-	help    = flag.Bool("h", false, "Show command usage")
-	verbose = flag.Bool("v", false, "Show all the bits")
+const (
+	defaultHostname = "localhost" // "data.salad.com"
+	defaultPort     = 5000
 )
 
-func Execute() {
+var (
+	help     = flag.Bool("h", false, "Show command usage")
+	verbose  = flag.Bool("v", false, "Show all the bits")
+	hostname string
+	port     int
+)
+
+func InitRootCmd() {
 	var err error
 	log.SetFlags(0)
 
@@ -28,14 +36,16 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	var host string
-	host = "data.salad.com"
-	if len(args) >= 1 {
-		host = args[0]
+	if !*verbose {
+		log.SetOutput(io.Discard)
 	}
 
-	var port int
-	port = 5000
+	hostname = defaultHostname
+	if len(args) >= 1 {
+		hostname = args[0]
+	}
+
+	port = defaultPort
 	if len(args) >= 2 {
 		// port, err = strconv.ParseInt(args[1], 10, 16)
 		_, err = fmt.Sscan(args[1], &port)
@@ -46,6 +56,8 @@ func Execute() {
 			os.Exit(1)
 		}
 	}
+}
 
-	log.Printf("Host: %s:%d\n", host, port)
+func Execute() {
+	log.Printf("Host: %s:%d\n", hostname, port)
 }

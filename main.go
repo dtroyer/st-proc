@@ -8,5 +8,6 @@ import (
 )
 
 func main() {
+	cmd.InitRootCmd()
 	cmd.Execute()
 }
