@@ -1,6 +1,6 @@
 # Makefile
 
-NAME := project
+NAME := st-proc
 
 BIN_DIR ?= bin
 SHELL := /bin/bash
