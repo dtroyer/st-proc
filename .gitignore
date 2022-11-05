@@ -1,0 +1,14 @@
+bin/
+
+*.dll
+*.dylib
+*.exe
+*.exe~
+*.out
+*.so
+*.swp
+*.test
+
+.AppleDouble
+.DS_Store
+.env
