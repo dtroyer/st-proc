@@ -4,16 +4,22 @@
 package cmd
 
 import (
+	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
+	"syscall"
+	"time"
 )
 
 const (
 	defaultHostname = "localhost" // "data.salad.com"
 	defaultPort     = 5000
+	waitTime        = 15
 )
 
 var (
@@ -59,5 +65,45 @@ func InitRootCmd() {
 }
 
 func Execute() {
-	log.Printf("Host: %s:%d\n", hostname, port)
+	// Resolve hostname and port
+	serverEndpoint := fmt.Sprintf("%s:%d", hostname, port)
+	serverAddr, err := net.ResolveTCPAddr("tcp", serverEndpoint)
+	if err != nil {
+		fmt.Printf("Hostname not found: %s\n", hostname)
+		fmt.Println(err)
+		os.Exit(2)
+	}
+
+	log.Printf("Endpoint: %s:%d (%s)\n", hostname, port, serverAddr)
+
+	for {
+		// Connect
+		log.Println("Connecting to ", serverAddr)
+		conn, err := net.DialTCP("tcp", nil, serverAddr)
+		if err != nil {
+			if errors.Is(err, syscall.ECONNREFUSED) {
+				// Hang out a bit and try again
+				log.Println("Connection refused, pausing for retry")
+				time.Sleep(waitTime * time.Second)
+				continue
+			}
+			fmt.Printf("Connect failed:\n")
+			fmt.Println(err)
+			os.Exit(2)
+		}
+
+		// buffer to get data
+		log.Println("Reading data")
+		var receiveBuf bytes.Buffer
+		io.Copy(&receiveBuf, conn)
+		fmt.Printf("buflen: %d\n", receiveBuf.Len())
+		println("Received message:", receiveBuf.String())
+
+		conn.Close()
+
+		// decode
+
+		// We're retrying too fast, pause a bit...
+		time.Sleep(waitTime * time.Second)
+	}
 }
