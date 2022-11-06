@@ -18,9 +18,9 @@ import (
 // * reads all sent data until server closes connection
 
 type RouterConn struct {
-	Hostname string
-	Port int
-	Wait int
+	Hostname   string
+	Port       int
+	Wait       int
 	serverAddr *net.TCPAddr
 	connection *net.TCPConn
 }
