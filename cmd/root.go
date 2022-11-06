@@ -4,22 +4,21 @@
 package cmd
 
 import (
-	"bytes"
-	"errors"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"os"
-	"syscall"
 	"time"
+
+	"github.com/dtroyer/st-proc/flight"
 )
 
 const (
 	defaultHostname = "localhost" // "data.salad.com"
 	defaultPort     = 5000
-	waitTime        = 15
+	waitTime        = 3
 )
 
 var (
@@ -65,28 +64,19 @@ func InitRootCmd() {
 }
 
 func Execute() {
-	// Resolve hostname and port
-	serverEndpoint := fmt.Sprintf("%s:%d", hostname, port)
-	serverAddr, err := net.ResolveTCPAddr("tcp", serverEndpoint)
+	router := &RouterConn{Hostname: hostname, Port: port, Wait: waitTime}
+	err := router.Setup()
 	if err != nil {
 		fmt.Printf("Hostname not found: %s\n", hostname)
 		fmt.Println(err)
 		os.Exit(2)
 	}
 
-	log.Printf("Endpoint: %s:%d (%s)\n", hostname, port, serverAddr)
-
 	for {
 		// Connect
-		log.Println("Connecting to ", serverAddr)
-		conn, err := net.DialTCP("tcp", nil, serverAddr)
+		log.Println("Connecting to ", hostname, ":", port)
+		err := router.Connect()
 		if err != nil {
-			if errors.Is(err, syscall.ECONNREFUSED) {
-				// Hang out a bit and try again
-				log.Println("Connection refused, pausing for retry")
-				time.Sleep(waitTime * time.Second)
-				continue
-			}
 			fmt.Printf("Connect failed:\n")
 			fmt.Println(err)
 			os.Exit(2)
@@ -94,14 +84,21 @@ func Execute() {
 
 		// buffer to get data
 		log.Println("Reading data")
-		var receiveBuf bytes.Buffer
-		io.Copy(&receiveBuf, conn)
-		fmt.Printf("buflen: %d\n", receiveBuf.Len())
-		println("Received message:", receiveBuf.String())
+		buf, err := router.Read()
+		log.Printf(" bytes read: %d\n", buf.Len())
 
-		conn.Close()
+		router.Close()
 
-		// decode
+		var flightMsg flight.FlightMessage
+		err = flight.DecodePacketBuffer(&buf, &flightMsg)
+		if err != nil {
+			fmt.Println("error: ", err)
+		}
+		jsonMsg, err := json.MarshalIndent(flightMsg, "", "  ")
+		if err != nil {
+			fmt.Println("error: ", err)
+		}
+		fmt.Printf("%s\n", jsonMsg)
 
 		// We're retrying too fast, pause a bit...
 		time.Sleep(waitTime * time.Second)
