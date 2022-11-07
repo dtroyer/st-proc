@@ -15,6 +15,12 @@ import (
 // Define a specific type for the header to simplify decoding
 type MessageHeader [3]byte
 
+// Encode a MessageHeader to base64
+func (b *MessageHeader) MarshalJSON() ([]byte, error) {
+	str := base64.StdEncoding.EncodeToString((*b)[0:3])
+	return []byte(str), nil
+}
+
 // Decode a base64-encoded string into MessageHeader
 func (b *MessageHeader) UnmarshalJSON(input []byte) error {
 	dst, err := base64.StdEncoding.DecodeString(string(input[1 : len(input)-1]))
