@@ -9,8 +9,9 @@ import (
 	"gotest.tools/v3/assert"
 )
 
+// Test command-line defaults
 func TestInitRootCmd(t *testing.T) {
 	InitRootCmd()
-	assert.Equal(t, "localhost", hostname)
-	assert.Equal(t, 5000, port)
+	assert.Equal(t, defaultHostname, hostname)
+	assert.Equal(t, defaultPort, port)
 }

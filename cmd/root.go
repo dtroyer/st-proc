@@ -1,6 +1,10 @@
 // st-proc: Message Processor CLI
 // SPDX-License-Identifier: MIT
 
+// Entry points for the processor
+// * handle command-line arguments
+// * main processing loop
+
 package cmd
 
 import (
@@ -10,13 +14,12 @@ import (
 	"io"
 	"log"
 	"os"
-	"time"
 
 	"github.com/dtroyer/st-proc/flight"
 )
 
 const (
-	defaultHostname = "localhost" // "data.salad.com"
+	defaultHostname = "data.salad.com"
 	defaultPort     = 5000
 	waitTime        = 3
 )
@@ -28,6 +31,7 @@ var (
 	port     int
 )
 
+// Do command line argument processing and other initialization
 func InitRootCmd() {
 	var err error
 	log.SetFlags(0)
@@ -63,7 +67,12 @@ func InitRootCmd() {
 	}
 }
 
+// Main processing loop
+// The normal exit for the loop is with SIGINT, SIGTERM or Ctrl-C. The
+// RouterConn.Connect() method will continuously retry following connection
+// refused (ECONNREFUSED) errors, other errors will exit.
 func Execute() {
+	// Set up the RouterConn host info and validate name resolution
 	router := &RouterConn{Hostname: hostname, Port: port, Wait: waitTime}
 	err := router.Setup()
 	if err != nil {
@@ -73,7 +82,7 @@ func Execute() {
 	}
 
 	for {
-		// Connect
+		// Connect to router
 		log.Println("Connecting to ", hostname, ":", port)
 		err := router.Connect()
 		if err != nil {
@@ -82,25 +91,25 @@ func Execute() {
 			os.Exit(2)
 		}
 
-		// buffer to get data
+		// Read message data
 		log.Println("Reading data")
 		buf, err := router.Read()
 		log.Printf(" bytes read: %d\n", buf.Len())
 
 		router.Close()
 
+		// Decode the message
 		var flightMsg flight.FlightMessage
 		err = flight.DecodePacketBuffer(&buf, &flightMsg)
 		if err != nil {
 			fmt.Println("error: ", err)
 		}
+
+		// Make it easy on the eyes: fancy indented JSON
 		jsonMsg, err := json.MarshalIndent(flightMsg, "", "  ")
 		if err != nil {
 			fmt.Println("error: ", err)
 		}
 		fmt.Printf("%s\n", jsonMsg)
-
-		// We're retrying too fast, pause a bit...
-		time.Sleep(waitTime * time.Second)
 	}
 }

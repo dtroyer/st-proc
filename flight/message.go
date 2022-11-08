@@ -1,6 +1,11 @@
 // st-proc: Message Processor CLI
 // SPDX-License-Identifier: MIT
 
+// Message handling for flight data
+// * FlightMessage Go struct representing the message packat, with JSON tags
+// * Decode on-the-wire packet into FlightMessage
+// * JSON Marshal and Unmarshal support for the 3 byte message header
+
 package flight
 
 import (
@@ -14,6 +19,8 @@ import (
 
 // Define a specific type for the header to simplify decoding
 type MessageHeader [3]byte
+
+// The MessageHeader is base64 encoded in JSON
 
 // Encode a MessageHeader to base64
 func (b *MessageHeader) MarshalJSON() ([]byte, error) {
@@ -43,23 +50,23 @@ type FlightMessage struct {
 	Temperature float64       `json:"temperature"`
 }
 
-var (
-	FlightMessageHeader = MessageHeader{'A', 'I', 'R'}
-)
+// The MessageHeader we are concerned with
+var FlightMessageHeader = MessageHeader{'A', 'I', 'R'}
 
 // Decode the binary message into a FlightMessage struct
 func DecodePacketBuffer(buffer *bytes.Buffer, data interface{}) error {
+	// Validate passed destination buffer is a pointer and FlightMessage struct
 	dataType := reflect.TypeOf(data).Kind()
 	if dataType != reflect.Ptr {
-		return errors.New("data is not a ptr")
+		return errors.New("data is not a pointer")
 	}
 
 	dataValue := reflect.ValueOf(data).Elem()
-	if dataValue.Kind() != reflect.Struct {
-		return errors.New("data is not a struct")
+	if dataValue.Type().Name() != "FlightMessage" {
+		return errors.New("data is not a FlightMessage struct")
 	}
 
-	// Loop through the FlightMessage struct fields and extract
+	// Loop through the FlightMessage struct fields and extract bytes from the buffer
 	for i := 0; i < dataValue.NumField(); i++ {
 		switch dataValue.Field(i).Type().Kind() {
 		case reflect.Array:
@@ -83,13 +90,15 @@ func DecodePacketBuffer(buffer *bytes.Buffer, data interface{}) error {
 			}
 			break
 		case reflect.String:
-			var strlen uint32
-			err := binary.Read(buffer, binary.BigEndian, &strlen)
+			// Get 4 byte string size
+			var strsize uint32
+			err := binary.Read(buffer, binary.BigEndian, &strsize)
 			if err != nil {
 				return err
 			}
+			// Get string value
 			dataValue.Field(i).SetString(
-				strings.ToValidUTF8(string(buffer.Next(int(strlen))), ""),
+				strings.ToValidUTF8(string(buffer.Next(int(strsize))), ""),
 			)
 			break
 		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:

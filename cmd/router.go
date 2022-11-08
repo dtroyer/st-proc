@@ -1,6 +1,8 @@
 // st-proc: Message Processor CLI
 // SPDX-License-Identifier: MIT
 
+// RouterConn handles the network I/O to the message router
+
 package cmd
 
 import (
