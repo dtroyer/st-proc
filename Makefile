@@ -1,6 +1,7 @@
 # Makefile
 
 NAME := st-proc
+SRC_URL := github.com/dtroyer/$(NAME)
 
 BIN_DIR ?= bin
 SHELL := /bin/bash
@@ -20,6 +21,10 @@ fmt:
 .PHONY: fmtfix
 fmtfix:
 	go fmt ./...
+
+.PHONY: setup
+setup:
+	go get -t $(SRC_URL)/cmd $(SRC_URL)/flight
 
 .PHONY: test
 test:
