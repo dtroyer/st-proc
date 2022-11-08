@@ -94,6 +94,9 @@ func Execute() {
 		// Read message data
 		log.Println("Reading data")
 		buf, err := router.Read()
+		if err != nil {
+			fmt.Println("Read error: ", err)
+		}
 		log.Printf(" bytes read: %d\n", buf.Len())
 
 		router.Close()
@@ -102,7 +105,7 @@ func Execute() {
 		var flightMsg flight.FlightMessage
 		err = flight.DecodePacketBuffer(&buf, &flightMsg)
 		if err != nil {
-			fmt.Println("error: ", err)
+			fmt.Println("Decoding error: ", err)
 		}
 
 		// Make it easy on the eyes: fancy indented JSON

@@ -53,27 +53,37 @@ the simple protocol only sends a single stream of data then closes the connectio
 
 * Get the source:
 
+    ```bash
 	git clone https://github.com/dtroyer/st-proc
 	cd st-proc
 	make setup
+    ```
 
 * Build, the executable will be in bin/st-proc:
 
+    ```bash
 	make build
+    ```
 
 * Run unit tests:
 
+    ```bash
     make test
+    ```
 
 * Run locally: We can use ``netcat`` and ``base64`` to simulate the server and
   run the processor locally for testing.  Two shell sessions are required.  To
   start the server, run in one session:
 
+    ```bash
     base64 -d files/testPacket1 | nc -l 5000
+    ```
 
   And in the other session run the processor client:
 
+    ```bash
     bin/st-proc localhost
+    ```
 
   Compare the JSON output with the testJson1 string in ``flight/message_test.go``
   or with the string in the original spec.  Note that the ``header`` field is
@@ -93,3 +103,5 @@ Dean Troyer <dt-github@xr7.org>
 
 * The JSON output produces the ``header`` value as an integer array rather than a
   base64-encoded string.  ``message.UnmarshalJSON()`` is not being called as expected.
+
+    [![Go Report Card](https://goreportcard.com/badge/github.com/dtroyer/st-proc?style=flat-square)](https://goreportcard.com/report/github.com/dtroyer/st-proc)
