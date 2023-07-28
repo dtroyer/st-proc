@@ -105,3 +105,5 @@ Dean Troyer <dt-github@xr7.org>
   base64-encoded string.  ``message.UnmarshalJSON()`` is not being called as expected.
 
     [![Go Report Card](https://goreportcard.com/badge/github.com/dtroyer/st-proc?style=flat-square)](https://goreportcard.com/report/github.com/dtroyer/st-proc)
+
+slight mod
